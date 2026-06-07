@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lite RON Converter</title>
+    <style>
+      :root { color-scheme: dark; font-family: Arial, sans-serif; }
+      body { margin: 0; background: linear-gradient(135deg, #07111f, #0f172a); color: #e5eefb; min-height: 100vh; }
+      .wrap { max-width: 960px; margin: 0 auto; padding: 32px 18px 60px; }
+      .card { background: rgba(15, 23, 42, 0.86); border: 1px solid rgba(148, 163, 184, 0.18); border-radius: 18px; padding: 20px; box-shadow: 0 16px 40px rgba(15, 23, 42, 0.45); }
+      h1 { margin-top: 0; font-size: clamp(1.8rem, 4vw, 2.6rem); }
+      p { color: #cbd5e1; line-height: 1.5; }
+      .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+      label { display: block; font-size: 0.95rem; color: #bfdbfe; margin-bottom: 8px; }
+      input, select, button { width: 100%; border-radius: 10px; border: 1px solid rgba(148, 163, 184, 0.28); background: rgba(15, 23, 42, 0.92); color: #eff6ff; padding: 10px 12px; font-size: 1rem; box-sizing: border-box; }
+      button { cursor: pointer; background: linear-gradient(135deg, #2563eb, #7c3aed); border: none; font-weight: 700; }
+      button:hover { filter: brightness(1.06); }
+      .result { margin-top: 14px; padding: 10px 12px; border-radius: 12px; background: rgba(30, 41, 59, 0.95); border: 1px solid rgba(129, 140, 248, 0.35); }
+      .small { color: #bfdbfe; font-size: 0.95rem; }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <section class="card">
+        <h1>Lite RON converter</h1>
+        <p>This lightweight page keeps RON as the base currency and lets you enter any target currency code at runtime.</p>
+        <div class="grid">
+          <div>
+            <label for="amount">Amount</label>
+            <input id="amount" type="number" value="100" step="0.01" />
+          </div>
+          <div>
+            <label for="fromCurrency">Base currency</label>
+            <input id="fromCurrency" type="text" value="RON" readonly />
+          </div>
+          <div>
+            <label for="toCurrency">Target currency</label>
+            <input id="toCurrency" type="text" value="RSD" placeholder="EUR, USD, RSD..." />
+          </div>
+          <div>
+            <button id="convertBtn" type="button">Convert</button>
+          </div>
+        </div>
+        <div id="result" class="result">Loading quote…</div>
+        <p class="small">Status: <span id="status">checking</span></p>
+      </section>
+    </main>
+    <script>
+      const resultEl = document.getElementById('result');
+      const statusEl = document.getElementById('status');
+      const convertBtn = document.getElementById('convertBtn');
+
+      async function fetchQuote() {
+        const amount = Number(document.getElementById('amount').value || 0);
+        const fromCurrency = document.getElementById('fromCurrency').value;
+        const toCurrency = document.getElementById('toCurrency').value;
+        statusEl.textContent = 'fetching';
+        try {
+          const response = await fetch(`/api/convert?amount=${amount}&from_currency=${fromCurrency}&to_currency=${toCurrency}`);
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.detail || 'Request failed');
+          resultEl.innerHTML = `Converted ${data.amount} ${data.from_currency} = <strong>${data.converted.toFixed(4)}</strong> ${data.to_currency}.<br/>Rate: 1 ${data.from_currency} = ${data.rate.toFixed(6)} ${data.to_currency} (source: ${data.source}).`;
+          statusEl.textContent = 'ready';
+        } catch (err) {
+          resultEl.textContent = 'Unable to fetch conversion: ' + err.message;
+          statusEl.textContent = 'error';
+        }
+      }
+
+      convertBtn.addEventListener('click', fetchQuote);
+      fetchQuote();
+    </script>
+  </body>
+</html>
